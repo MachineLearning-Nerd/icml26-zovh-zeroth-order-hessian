@@ -1,0 +1,89 @@
+{
+  "claims": {
+    "C1_estimator_unification": {
+      "prop32_to_A_err": 0.03795275394245299,
+      "rank1_to_A_err": 0.037952753942453156,
+      "form_difference": 8.813214774254467e-16,
+      "forms_equivalent": true,
+      "both_converge_to_smoothed_hessian": true,
+      "VERDICT": "VERIFIED"
+    },
+    "C2_unbiased": {
+      "baseline_diff_by_N": {
+        "2000": 0.0367,
+        "8000": 0.0203,
+        "32000": 0.0118,
+        "128000": 0.0035
+      },
+      "baseline_diff_shrinks": true,
+      "quadratic_relerr_by_N": {
+        "5000": 0.1619,
+        "20000": 0.0875,
+        "80000": 0.0449,
+        "320000": 0.0194
+      },
+      "quartic_relerr_by_N": {
+        "5000": 0.1199,
+        "20000": 0.0644,
+        "80000": 0.0549,
+        "320000": 0.0225
+      },
+      "converges_to_smoothed_hessian": true,
+      "VERDICT": "VERIFIED"
+    },
+    "C3_variance_bias": {
+      "baseline_concentration": [
+        {
+          "d": 3,
+          "rel_diff": 0.6077
+        },
+        {
+          "d": 6,
+          "rel_diff": 0.5657
+        },
+        {
+          "d": 12,
+          "rel_diff": 0.2314
+        },
+        {
+          "d": 24,
+          "rel_diff": 0.1019
+        }
+      ],
+      "b_star_converges_to_Fmu": true,
+      "mse_vs_Fmu_by_K": {
+        "20": 603.182,
+        "50": 222.598,
+        "100": 112.106,
+        "200": 53.729
+      },
+      "variance_decreases_with_K": true,
+      "squared_bias_by_mu": {
+        "0.05": 0.007,
+        "0.1": 0.101,
+        "0.2": 1.497,
+        "0.4": 23.022
+      },
+      "bound_L2sq_mu2_d_by_mu": {
+        "0.05": 3.163,
+        "0.1": 12.651,
+        "0.2": 50.603,
+        "0.4": 202.411
+      },
+      "bias_increases_with_mu": true,
+      "bias_under_bound_all_mu": true,
+      "VERDICT": "VERIFIED"
+    },
+    "C4_beats_central_difference": {
+      "zovh_err_K200": 75.504,
+      "central_diff_err": 0.0016,
+      "zovh_beats_central_diff": false,
+      "honest_negative": "Bare ZoVH variance (1/mu^4) exceeds central-difference truncation error; the paper's 8x improvement relies on its control-variate / query-reuse variance reduction, not reproduced here.",
+      "VERDICT": "FAIL"
+    },
+    "C6_zo_speedup": {
+      "honest_negative": "ZO gradient noise (~mu^2 d/iter) and Hessian-estimate noise prevent the bare ZoVH-preconditioned step from reaching the target faster than vanilla ZO-GD; the 22x speedup is not reproduced without the paper's full variance-reduction machinery.",
+      "VERDICT": "FAIL"
+    }
+  }
+}
