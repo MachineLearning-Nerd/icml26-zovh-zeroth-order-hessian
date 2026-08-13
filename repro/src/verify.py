@@ -1,226 +1,432 @@
-"""Verify the anchored claims of arXiv 2605.30960 (ZoVH Zeroth-Order Hessian).
+"""Run bounded finite diagnostics for arXiv 2605.30960 (ZoVH).
 
-C1  Prop 3.2/3.3: the (u u^T - I) form (any baseline) and the rank-one form (baseline F_mu)
-    are statistically equivalent -- both have expectation grad^2 F_mu (coincide with b=F_mu).
-C2  Theorem 4.6: E[Ĥ] = grad^2 F_mu -- unbiased and BASELINE-INDEPENDENT (E[u u^T - I]=0).
-    Verified by baseline-independence (Ĥ(b1)-Ĥ(b2) -> 0 at 1/sqrt(N)) and convergence to the
-    analytic smoothed Hessian (quadratic: A; quartic: diag(12 theta^2 + 12 mu^2)).
-C3  Theorem 4.7/4.8: optimal baseline b* -> F_mu as d grows; Frobenius MSE = variance
-    (decreasing in K, mu) + squared smoothing bias L2^2 mu^2 d (increasing in mu).
-C4  Figure 2 (ZoVH vs central-difference): HONEST NEGATIVE -- the bare estimator's 1/mu^4
-    variance dominates; the paper's 8x improvement needs its full control-variate / query-reuse
-    machinery, which is not in the bare Prop 3.2 estimator.
-C5  MNIST adversarial attack: deferred (real data).
-C6  Section 6.2 (ZO speedup): HONEST NEGATIVE -- ZO gradient/Hessian noise floor prevents the
-    bare ZoVH-preconditioned step from out-converging vanilla ZO-GD; the 22x speedup needs the
-    paper's full variance-reduced implementation.
+The diagnostics exercise four narrow pieces of the paper on deterministic
+analytic toy objectives.  They are evidence for those finite proxies, not
+proof of the paper's general theorems or reproduction of its experiments.
+
+C1  Propositions 3.2/3.3: compare the two estimator forms on shared directions.
+C2  Theorem 4.6: measure finite-sample baseline differences and convergence to
+    analytic smoothed Hessians.
+C3  Theorems 4.7/4.8: measure finite baseline concentration, K-dependent MSE,
+    and smoothing-bias scaling with a loose toy bound.
+C4  Figure 2 diagnostic: compare the bare single-batch estimator with central
+    differences under one fixed synthetic setting; this is an honest negative.
+
+C5 (MNIST attack) and C6 (synthetic optimization speedup) are not run here.
 """
 from __future__ import annotations
-import os, json
-import numpy as np
+
+import json
+import os
 import sys
+
+import numpy as np
+
 sys.path.insert(0, os.path.dirname(__file__))
-from core import (zovh_estimator_prop32, smoothed_value, optimal_baseline,
-                  smoothed_hessian_mc, central_difference_hessian,
-                  make_quadratic, make_quartic)
+from core import (  # noqa: E402
+    central_difference_hessian,
+    make_quadratic,
+    make_quartic,
+    optimal_baseline,
+    smoothed_hessian_mc,
+    smoothed_value,
+    zovh_estimator_prop32,
+)
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "..", "outputs")
 os.makedirs(OUT, exist_ok=True)
-rep: dict = {"claims": {}}
 
 
-def _dump(o):
-    if isinstance(o, np.bool_): return bool(o)
-    if isinstance(o, np.floating): return float(o)
-    if isinstance(o, np.integer): return int(o)
-    if isinstance(o, np.ndarray): return o.tolist()
-    return str(o)
+def _hessian_from_directions(f, theta, mu, baseline, directions):
+    """Evaluate the Proposition 3.2 form on a shared finite direction sample."""
+    directions = np.asarray(directions)
+    n, d = directions.shape
+    values = np.asarray([f(theta + mu * u) for u in directions])
+    weighted = directions * (values - baseline)[:, None]
+    hessian = directions.T @ weighted / (mu**2 * n)
+    correction = np.eye(d) * np.mean(values - baseline) / mu**2
+    return hessian - correction
 
 
-def _H_with_U(f, theta, mu, baseline, U, form="prop32"):
-    N, d = U.shape
-    fu = np.array([f(theta + mu * u) for u in U])
-    if form == "prop32":
-        return (U.T @ (U * (fu - baseline)[:, None])) / mu**2 / N - np.eye(d) * np.mean(fu - baseline) / mu**2
-    return (U.T @ (U * (fu - baseline)[:, None])) / mu**2 / N
+def _rank_one_from_directions(f, theta, mu, baseline, directions):
+    """Evaluate the Proposition 3.3 rank-one form on shared directions."""
+    directions = np.asarray(directions)
+    n, _ = directions.shape
+    values = np.asarray([f(theta + mu * u) for u in directions])
+    weighted = directions * (values - baseline)[:, None]
+    return directions.T @ weighted / (mu**2 * n)
 
 
-# --------------------------------------------------------------------------- #
-def claim_C1():
-    """Prop 3.2/3.3: with baseline b=F_mu the (u u^T - I) and rank-one forms coincide exactly
-    (both -> grad^2 F_mu); the -I term vanishes because mean(f - F_mu) = 0."""
-    res = {}
+def claim_c1_proxy():
     rng = np.random.default_rng(1)
-    d, mu = 4, 0.3
-    A = rng.normal(size=(d, d)); A = A @ A.T / d
-    f, _ = make_quadratic(A, rng.normal(size=d))
+    d, mu, n = 4, 0.3, 200_000
+    matrix = rng.normal(size=(d, d))
+    matrix = matrix @ matrix.T / d
+    objective, _ = make_quadratic(matrix, rng.normal(size=d))
     theta = rng.normal(size=d) * 0.5
-    N = 200000
-    U = rng.standard_normal(size=(N, d))
-    fu = np.array([f(theta + mu * u) for u in U])
-    Fmu = float(np.mean(fu))
-    H32 = (U.T @ (U * (fu - Fmu)[:, None])) / mu**2 / N - np.eye(d) * np.mean(fu - Fmu) / mu**2
-    Hr1 = (U.T @ (U * (fu - Fmu)[:, None])) / mu**2 / N
-    res["prop32_to_A_err"] = float(np.linalg.norm(H32 - A))
-    res["rank1_to_A_err"] = float(np.linalg.norm(Hr1 - A))
-    res["form_difference"] = float(np.linalg.norm(H32 - Hr1))
-    res["forms_equivalent"] = bool(np.linalg.norm(H32 - Hr1) < 1e-9)
-    res["both_converge_to_smoothed_hessian"] = bool(
-        np.linalg.norm(H32 - A) < 0.1 and np.linalg.norm(Hr1 - A) < 0.1)
-    ok = res["forms_equivalent"] and res["both_converge_to_smoothed_hessian"]
-    res["VERDICT"] = "VERIFIED" if ok else "FAIL"
-    rep["claims"]["C1_estimator_unification"] = res
-    return ok
+    directions = rng.standard_normal(size=(n, d))
+    values = np.asarray([objective(theta + mu * u) for u in directions])
+    f_mu = float(np.mean(values))
+
+    hessian_32 = _hessian_from_directions(
+        objective, theta, mu, f_mu, directions
+    )
+    hessian_rank_one = _rank_one_from_directions(
+        objective, theta, mu, f_mu, directions
+    )
+    form_difference = float(np.linalg.norm(hessian_32 - hessian_rank_one))
+    prop32_error = float(np.linalg.norm(hessian_32 - matrix))
+    rank_one_error = float(np.linalg.norm(hessian_rank_one - matrix))
+    passed = bool(
+        form_difference < 1e-9
+        and prop32_error < 0.1
+        and rank_one_error < 0.1
+    )
+
+    return {
+        "paper_claim": "Propositions 3.2 and 3.3",
+        "diagnostic": "shared finite Gaussian directions on a quadratic",
+        "prop32_to_quadratic_hessian_error": prop32_error,
+        "rank_one_to_quadratic_hessian_error": rank_one_error,
+        "form_difference": form_difference,
+        "finite_proxy_passed": passed,
+        "status": "ALGEBRAIC_FINITE_PROXY",
+        "limitation": (
+            "A finite sample check of the two formulas; it is not a proof of "
+            "the propositions for arbitrary stochastic objectives."
+        ),
+    }
 
 
-# --------------------------------------------------------------------------- #
-def claim_C2():
-    """Theorem 4.6: E[Ĥ] = grad^2 F_mu.  (a) baseline-independence: Ĥ(b1)-Ĥ(b2) -> 0 ~ 1/sqrt(N);
-    (b) mean(Ĥ) -> analytic grad^2 F_mu (quadratic: A; quartic: diag)."""
-    res = {}
+def claim_c2_proxy():
     rng = np.random.default_rng(3)
     d, mu = 5, 0.3
-    A = rng.normal(size=(d, d)); A = A @ A.T / d
-    fq, _ = make_quadratic(A, rng.normal(size=d))
+    matrix = rng.normal(size=(d, d))
+    matrix = matrix @ matrix.T / d
+    objective, _ = make_quadratic(matrix, rng.normal(size=d))
     theta = rng.normal(size=d) * 0.5
-    Fmu = smoothed_value(fq, theta, mu, np.random.default_rng(4), N=20000)
-    diffs = []; offs = []
-    for N in [2000, 8000, 32000, 128000]:
-        U = rng.standard_normal(size=(N, d))
-        H0 = _H_with_U(fq, theta, mu, 0.0, U)
-        Hf = _H_with_U(fq, theta, mu, Fmu, U)
-        diffs.append(float(np.linalg.norm(H0 - Hf)))
-        offs.append(float(np.linalg.norm(U.T @ U / N - np.eye(d))))
-    res["baseline_diff_by_N"] = {str(N): round(v, 4) for N, v in zip([2000, 8000, 32000, 128000], diffs)}
-    res["baseline_diff_shrinks"] = bool(diffs[-1] < diffs[0] * 0.2)
-    # convergence to analytic smoothed Hessian
-    conv_q = []
-    for N in [5000, 20000, 80000, 320000]:
-        U = rng.standard_normal(size=(N, d))
-        H = _H_with_U(fq, theta, mu, Fmu, U)
-        conv_q.append(float(np.linalg.norm(H - A) / np.linalg.norm(A)))
-    res["quadratic_relerr_by_N"] = {str(N): round(v, 4) for N, v in zip([5000, 20000, 80000, 320000], conv_q)}
-    ff, _ = make_quartic()
-    trueHf = np.diag(12 * theta**2 + 12 * mu**2)
-    Fmu_f = smoothed_value(ff, theta, mu, np.random.default_rng(5), N=20000)
-    conv_f = []
-    for N in [5000, 20000, 80000, 320000]:
-        U = rng.standard_normal(size=(N, d))
-        H = _H_with_U(ff, theta, mu, Fmu_f, U)
-        conv_f.append(float(np.linalg.norm(H - trueHf) / np.linalg.norm(trueHf)))
-    res["quartic_relerr_by_N"] = {str(N): round(v, 4) for N, v in zip([5000, 20000, 80000, 320000], conv_f)}
-    res["converges_to_smoothed_hessian"] = bool(conv_q[-1] < conv_q[0] * 0.4 and conv_f[-1] < conv_f[0] * 0.6)
-    ok = bool(res["baseline_diff_shrinks"] and res["converges_to_smoothed_hessian"]
-              and conv_q[-1] < 0.10 and conv_f[-1] < 0.12)
-    res["VERDICT"] = "VERIFIED" if ok else "FAIL"
-    rep["claims"]["C2_unbiased"] = res
-    return ok
+    f_mu = smoothed_value(
+        objective, theta, mu, np.random.default_rng(4), N=20_000
+    )
+
+    sample_sizes = [2_000, 8_000, 32_000, 128_000]
+    baseline_differences = []
+    gram_errors = []
+    for n in sample_sizes:
+        directions = rng.standard_normal(size=(n, d))
+        hessian_zero = _hessian_from_directions(
+            objective, theta, mu, 0.0, directions
+        )
+        hessian_f_mu = _hessian_from_directions(
+            objective, theta, mu, f_mu, directions
+        )
+        baseline_differences.append(
+            float(np.linalg.norm(hessian_zero - hessian_f_mu))
+        )
+        gram_errors.append(
+            float(np.linalg.norm(directions.T @ directions / n - np.eye(d)))
+        )
+
+    quadratic_sizes = [5_000, 20_000, 80_000, 320_000]
+    quadratic_errors = []
+    for n in quadratic_sizes:
+        directions = rng.standard_normal(size=(n, d))
+        estimate = _hessian_from_directions(
+            objective, theta, mu, f_mu, directions
+        )
+        quadratic_errors.append(
+            float(np.linalg.norm(estimate - matrix) / np.linalg.norm(matrix))
+        )
+
+    quartic, _ = make_quartic()
+    quartic_hessian = np.diag(12 * theta**2 + 12 * mu**2)
+    quartic_f_mu = smoothed_value(
+        quartic, theta, mu, np.random.default_rng(5), N=20_000
+    )
+    quartic_errors = []
+    for n in quadratic_sizes:
+        directions = rng.standard_normal(size=(n, d))
+        estimate = _hessian_from_directions(
+            quartic, theta, mu, quartic_f_mu, directions
+        )
+        quartic_errors.append(
+            float(
+                np.linalg.norm(estimate - quartic_hessian)
+                / np.linalg.norm(quartic_hessian)
+            )
+        )
+
+    baseline_shrinks = baseline_differences[-1] < baseline_differences[0] * 0.2
+    convergence_improves = bool(
+        quadratic_errors[-1] < quadratic_errors[0] * 0.4
+        and quartic_errors[-1] < quartic_errors[0] * 0.6
+    )
+    passed = bool(
+        baseline_shrinks
+        and convergence_improves
+        and quadratic_errors[-1] < 0.10
+        and quartic_errors[-1] < 0.12
+    )
+
+    return {
+        "paper_claim": "Theorem 4.6",
+        "diagnostic": (
+            "finite baseline-difference scaling plus analytic quadratic and "
+            "quartic smoothed-Hessian convergence"
+        ),
+        "baseline_diff_by_sample_size": {
+            str(n): round(value, 4)
+            for n, value in zip(sample_sizes, baseline_differences)
+        },
+        "gram_error_by_sample_size": {
+            str(n): round(value, 4)
+            for n, value in zip(sample_sizes, gram_errors)
+        },
+        "quadratic_relative_error_by_sample_size": {
+            str(n): round(value, 4)
+            for n, value in zip(quadratic_sizes, quadratic_errors)
+        },
+        "quartic_relative_error_by_sample_size": {
+            str(n): round(value, 4)
+            for n, value in zip(quadratic_sizes, quartic_errors)
+        },
+        "baseline_difference_shrinks": bool(baseline_shrinks),
+        "analytic_convergence_improves": convergence_improves,
+        "finite_proxy_passed": passed,
+        "status": "FINITE_ANALYTIC_PROXY",
+        "limitation": (
+            "Finite Monte Carlo behavior on two noiseless toy objectives; it "
+            "does not establish the theorem under the paper's stochastic "
+            "assumptions."
+        ),
+    }
 
 
-# --------------------------------------------------------------------------- #
-def claim_C3():
-    """Theorem 4.7/4.8: (a) b* -> F_mu as d grows; (b) variance term decreases ~1/K;
-    (c) squared smoothing bias = ||grad^2 F_mu - grad^2 f||_F^2 grows ~mu^2 and is bounded
-    by L2^2 mu^2 d."""
-    res = {}
+def claim_c3_proxy():
     rng = np.random.default_rng(6)
-    # (a) b* -> F_mu (||u u^T - I||_F^2 concentrates -> constant d(d+1))
-    res["baseline_concentration"] = []
-    for d in [3, 6, 12, 24]:
-        mu = 0.2; ff, _ = make_quartic()
-        theta = rng.normal(size=d) * 0.3
-        Fmu = smoothed_value(ff, theta, mu, np.random.default_rng(7), N=6000)
-        bstar = optimal_baseline(ff, theta, mu, np.random.default_rng(8), N=6000)
-        res["baseline_concentration"].append({"d": d, "rel_diff": round(abs(bstar - Fmu) / abs(Fmu), 4)})
-    rels = [c["rel_diff"] for c in res["baseline_concentration"]]
-    res["b_star_converges_to_Fmu"] = bool(rels[-1] < rels[0])
+    baseline_records = []
+    for dimension in [3, 6, 12, 24]:
+        mu = 0.2
+        quartic, _ = make_quartic()
+        theta = rng.normal(size=dimension) * 0.3
+        f_mu = smoothed_value(
+            quartic, theta, mu, np.random.default_rng(7), N=6_000
+        )
+        baseline = optimal_baseline(
+            quartic, theta, mu, np.random.default_rng(8), N=6_000
+        )
+        baseline_records.append(
+            {
+                "dimension": dimension,
+                "relative_difference": round(
+                    abs(baseline - f_mu) / abs(f_mu), 4
+                ),
+            }
+        )
+    relative_differences = [
+        record["relative_difference"] for record in baseline_records
+    ]
 
-    # (b) variance (MSE vs grad^2 F_mu, bias=0 for quadratic) decreases ~1/K
-    d, mu = 6, 0.15
-    A = rng.normal(size=(d, d)); A = A @ A.T / d
-    fq, _ = make_quadratic(A, rng.normal(size=d))
-    theta = rng.normal(size=d) * 0.4; trueH = A
-    Fmu = smoothed_value(fq, theta, mu, np.random.default_rng(9), N=8000)
-    mse_by_K = []
-    for K in [20, 50, 100, 200]:
-        errs = [float(np.linalg.norm(zovh_estimator_prop32(fq, theta, mu, K, Fmu,
-                     np.random.default_rng(100 + s)) - trueH) ** 2) for s in range(60)]
-        mse_by_K.append(float(np.mean(errs)))
-    res["mse_vs_Fmu_by_K"] = {str(K): round(v, 3) for K, v in zip([20, 50, 100, 200], mse_by_K)}
-    res["variance_decreases_with_K"] = bool(mse_by_K[-1] < mse_by_K[0] * 0.4)
+    dimension, mu = 6, 0.15
+    matrix = rng.normal(size=(dimension, dimension))
+    matrix = matrix @ matrix.T / dimension
+    quadratic, _ = make_quadratic(matrix, rng.normal(size=dimension))
+    theta = rng.normal(size=dimension) * 0.4
+    f_mu = smoothed_value(
+        quadratic, theta, mu, np.random.default_rng(9), N=8_000
+    )
+    ks = [20, 50, 100, 200]
+    mse_by_k = []
+    for k in ks:
+        errors = [
+            float(
+                np.linalg.norm(
+                    zovh_estimator_prop32(
+                        quadratic,
+                        theta,
+                        mu,
+                        k,
+                        f_mu,
+                        np.random.default_rng(100 + seed),
+                    )
+                    - matrix
+                )
+                ** 2
+            )
+            for seed in range(60)
+        ]
+        mse_by_k.append(float(np.mean(errors)))
 
-    # (c) squared smoothing bias grows ~mu^2 and is bounded by L2^2 mu^2 d  (quartic, analytic)
-    ff, hf = make_quartic()
-    theta = rng.normal(size=d) * 0.4
-    trueHf = hf(theta)   # diag(12 theta^2)
-    bias_by_mu = []; bound_by_mu = []
-    L2 = 24.0 * np.max(np.abs(theta))   # Hessian-Lipschitz of sum x^4 ~ 24 max|theta|
-    for mu in [0.05, 0.1, 0.2, 0.4]:
-        smu = smoothed_hessian_mc(hf, theta, mu, np.random.default_rng(11), N=8000)
-        bias2 = float(np.linalg.norm(smu - trueHf) ** 2)
-        bias_by_mu.append(bias2)
-        bound_by_mu.append(L2**2 * mu**2 * d)
-    res["squared_bias_by_mu"] = {str(mu): round(v, 3) for mu, v in zip([0.05, 0.1, 0.2, 0.4], bias_by_mu)}
-    res["bound_L2sq_mu2_d_by_mu"] = {str(mu): round(v, 3) for mu, v in zip([0.05, 0.1, 0.2, 0.4], bound_by_mu)}
-    res["bias_increases_with_mu"] = bool(bias_by_mu[-1] > bias_by_mu[0] * 2)
-    res["bias_under_bound_all_mu"] = bool(all(bias_by_mu[i] <= bound_by_mu[i] * 1.5 for i in range(len(bias_by_mu))))
-    ok = bool(res["b_star_converges_to_Fmu"] and res["variance_decreases_with_K"]
-              and res["bias_increases_with_mu"] and res["bias_under_bound_all_mu"])
-    res["VERDICT"] = "VERIFIED" if ok else "FAIL"
-    rep["claims"]["C3_variance_bias"] = res
-    return ok
+    quartic, quartic_hessian = make_quartic()
+    theta = rng.normal(size=dimension) * 0.4
+    unsmoothed_hessian = quartic_hessian(theta)
+    lipschitz_proxy = 24.0 * np.max(np.abs(theta))
+    mus = [0.05, 0.1, 0.2, 0.4]
+    squared_bias = []
+    bounds = []
+    for smoothing in mus:
+        smoothed_hessian = smoothed_hessian_mc(
+            quartic_hessian,
+            theta,
+            smoothing,
+            np.random.default_rng(11),
+            N=8_000,
+        )
+        squared_bias.append(
+            float(np.linalg.norm(smoothed_hessian - unsmoothed_hessian) ** 2)
+        )
+        bounds.append(
+            float(lipschitz_proxy**2 * smoothing**2 * dimension)
+        )
+
+    baseline_concentration = relative_differences[-1] < relative_differences[0]
+    variance_decreases = mse_by_k[-1] < mse_by_k[0] * 0.4
+    bias_increases = squared_bias[-1] > squared_bias[0] * 2
+    bias_below_bound = all(
+        squared_bias[index] <= bounds[index] * 1.5
+        for index in range(len(mus))
+    )
+    passed = bool(
+        baseline_concentration
+        and variance_decreases
+        and bias_increases
+        and bias_below_bound
+    )
+
+    return {
+        "paper_claim": "Theorems 4.7 and 4.8",
+        "diagnostic": (
+            "finite baseline concentration, K-dependent MSE, and quartic "
+            "smoothing-bias scaling"
+        ),
+        "baseline_concentration": baseline_records,
+        "mse_by_K": {
+            str(k): round(value, 3) for k, value in zip(ks, mse_by_k)
+        },
+        "squared_bias_by_mu": {
+            str(smoothing): round(value, 3)
+            for smoothing, value in zip(mus, squared_bias)
+        },
+        "loose_toy_bound_by_mu": {
+            str(smoothing): round(value, 3)
+            for smoothing, value in zip(mus, bounds)
+        },
+        "baseline_concentration_improves": bool(baseline_concentration),
+        "mse_decreases_with_K": bool(variance_decreases),
+        "smoothing_bias_increases": bool(bias_increases),
+        "squared_bias_below_loose_bound": bool(bias_below_bound),
+        "finite_proxy_passed": passed,
+        "status": "FINITE_BIAS_VARIANCE_PROXY",
+        "limitation": (
+            "A finite toy trend check with a loose local bound; it does not "
+            "verify the theorem's constants, assumptions, query reuse, or "
+            "stochastic-noise model."
+        ),
+    }
 
 
-# --------------------------------------------------------------------------- #
-def claim_C4():
-    """Figure 2 (HONEST NEGATIVE): the bare ZoVH estimator's 1/mu^4 variance dominates, so it
-    does NOT beat the central-difference Hessian at equal query budget.  The paper's 8x
-    improvement requires its full control-variate / query-reuse machinery (not in Prop 3.2)."""
-    res = {}
+def claim_c4_negative():
     rng = np.random.default_rng(13)
-    d = 6
-    styb = lambda th: float(np.sum(th**4 - 16 * th**2 + 5 * th) / 2)   # Styblinski-Tang
-    theta = np.ones(d) * 0.5
-    trueH = central_difference_hessian(styb, theta, h=1e-6)
+    dimension = 6
+
+    def styblinski_tang(theta):
+        return float(np.sum(theta**4 - 16 * theta**2 + 5 * theta) / 2)
+
+    theta = np.ones(dimension) * 0.5
+    reference = central_difference_hessian(styblinski_tang, theta, h=1e-6)
     mu = 0.1
-    Fmu = smoothed_value(styb, theta, mu, np.random.default_rng(14), N=8000)
-    zovh_errs = [float(np.linalg.norm(zovh_estimator_prop32(styb, theta, mu, 200, Fmu,
-                     np.random.default_rng(200 + s)) - trueH)) for s in range(40)]
-    cd_err = float(np.linalg.norm(central_difference_hessian(styb, theta, h=1e-4) - trueH))
-    res["zovh_err_K200"] = round(float(np.mean(zovh_errs)), 3)
-    res["central_diff_err"] = round(cd_err, 4)
-    res["zovh_beats_central_diff"] = bool(np.mean(zovh_errs) < cd_err)
-    res["honest_negative"] = ("Bare ZoVH variance (1/mu^4) exceeds central-difference truncation "
-                              "error; the paper's 8x improvement relies on its control-variate / "
-                              "query-reuse variance reduction, not reproduced here.")
-    # report as FAIL (honest negative) -- do not force-fit
-    res["VERDICT"] = "FAIL"
-    rep["claims"]["C4_beats_central_difference"] = res
-    return False
+    f_mu = smoothed_value(
+        styblinski_tang, theta, mu, np.random.default_rng(14), N=8_000
+    )
+    bare_errors = [
+        float(
+            np.linalg.norm(
+                zovh_estimator_prop32(
+                    styblinski_tang,
+                    theta,
+                    mu,
+                    200,
+                    f_mu,
+                    np.random.default_rng(200 + seed),
+                )
+                - reference
+            )
+        )
+        for seed in range(40)
+    ]
+    central_difference_error = float(
+        np.linalg.norm(
+            central_difference_hessian(styblinski_tang, theta, h=1e-4)
+            - reference
+        )
+    )
+    bare_error = float(np.mean(bare_errors))
+    passed = bool(bare_error < central_difference_error)
+
+    return {
+        "paper_claim": "Figure 2 accuracy comparison",
+        "diagnostic": (
+            "bare Proposition 3.2 estimator versus central differences on "
+            "Styblinski-Tang at one fixed setting"
+        ),
+        "bare_zovh_error_K200": round(bare_error, 3),
+        "central_difference_error": round(central_difference_error, 4),
+        "bare_zovh_beats_central_difference": passed,
+        "finite_proxy_passed": False,
+        "status": "HONEST_NEGATIVE",
+        "limitation": (
+            "This is not the paper's Figure 2 protocol or an equal-budget "
+            "reproduction: query reuse, control variates, competing "
+            "estimators, and all reported settings are absent."
+        ),
+    }
 
 
-def claim_C6():
-    """Section 6.2 (HONEST NEGATIVE): the bare ZoVH-preconditioned ZO step does not out-converge
-    vanilla ZO-GD because ZO gradient/Hessian noise sets a convergence floor.  The paper's 22x
-    speedup needs its full variance-reduced implementation."""
-    res = {}
-    res["honest_negative"] = ("ZO gradient noise (~mu^2 d/iter) and Hessian-estimate noise prevent "
-                              "the bare ZoVH-preconditioned step from reaching the target faster than "
-                              "vanilla ZO-GD; the 22x speedup is not reproduced without the paper's "
-                              "full variance-reduction machinery.")
-    res["VERDICT"] = "FAIL"
-    rep["claims"]["C6_zo_speedup"] = res
-    return False
+def main():
+    claims = {
+        "C1_estimator_forms_proxy": claim_c1_proxy(),
+        "C2_unbiasedness_proxy": claim_c2_proxy(),
+        "C3_bias_variance_proxy": claim_c3_proxy(),
+        "C4_central_difference_proxy": claim_c4_negative(),
+    }
+    finite_passed = sum(
+        claim["finite_proxy_passed"] for claim in claims.values()
+    )
+    diagnostics = {
+        "paper": "Revisiting Zeroth-Order Hessian Approximation: A Single-Step Policy Optimization Lens",
+        "authors": ["Junbin Qiu", "Zhaowei Hong", "Renzhe Xu", "Yao Shu"],
+        "arxiv": "2605.30960",
+        "openreview": "nEQYu4ndGA",
+        "scope": "bounded_clean_room_single_batch_analytic_toy_proxy",
+        "claims": claims,
+        "finite_proxy_diagnostics_passed": finite_passed,
+        "finite_proxy_diagnostics_total": len(claims),
+        "negative_diagnostics": 1,
+        "paper_claims_verified": 0,
+        "paper_claims_total": 6,
+        "not_run": [
+            "C5: MNIST black-box adversarial attack",
+            "C6: Section 6.2 synthetic optimization speedup",
+        ],
+        "overall_status": "INCONCLUSIVE",
+    }
+    for filename in ["diagnostics.json", "verdict.json"]:
+        with open(os.path.join(OUT, filename), "w", encoding="utf-8") as handle:
+            json.dump(diagnostics, handle, indent=2)
+            handle.write("\n")
+
+    for claim_id, claim in claims.items():
+        print(
+            f"{claim_id}: {claim['status']} "
+            f"(finite proxy passed={claim['finite_proxy_passed']})"
+        )
+    print(
+        f"\nFinite proxy diagnostics passed: {finite_passed}/{len(claims)}"
+    )
+    print("Paper-level claims independently verified: 0/6")
+    print("Overall status: INCONCLUSIVE")
+    print("Saved outputs/diagnostics.json and outputs/verdict.json")
 
 
 if __name__ == "__main__":
-    r1 = claim_C1(); r2 = claim_C2(); r3 = claim_C3(); r4 = claim_C4(); r6 = claim_C6()
-    print(f"C1 estimator unification: {r1}")
-    print(f"C2 unbiased:                {r2}  (baseline-indep + convergence)")
-    print(f"C3 variance/bias:           {r3}  (b*->F_mu, var~1/K, bias~mu^2 bounded)")
-    print(f"C4 beats central-diff:      {r4}  (HONEST NEGATIVE)")
-    print(f"C6 ZO speedup:              {r6}  (HONEST NEGATIVE)")
-    json.dump(rep, open(os.path.join(OUT, "verdict.json"), "w"), indent=2, default=_dump)
-    n = sum(1 for c in rep["claims"].values() if c["VERDICT"] == "VERIFIED")
-    print(f"\nVERIFIED {n}/5 checked claims = {n*2} pts (+ C5 MNIST deferred, C4/C6 honest negatives)")
-    print("Saved outputs/verdict.json")
+    main()

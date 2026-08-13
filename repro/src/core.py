@@ -1,23 +1,26 @@
-"""Clean-room ZoVH zeroth-order Hessian estimator (arXiv 2605.30960, OpenReview nEQYu4ndGA).
+"""Bounded clean-room ZoVH diagnostics for arXiv 2605.30960.
 
-The Gaussian-smoothed objective is  F_mu(theta) = E_u[ f(theta + mu u) ],  u ~ N(0, I_d).
-Its Hessian (Proposition 3.2) is
+This module implements the single-batch Gaussian-smoothed Hessian identities
+used by the finite diagnostics.  The Gaussian-smoothed objective is
+F_mu(theta) = E_u[f(theta + mu u)], u ~ N(0, I_d).  Proposition 3.2 gives
 
     grad^2 F_mu(theta) = E_u[ (f(theta+mu u) - b) / mu^2  *  (u u^T - I_d) ]
 
-for ANY scalar baseline b independent of u (since E[u u^T - I_d] = 0).  The rank-one form
-(Prop 3.3) drops the -I_d by using the specific averaged baseline b = F_mu(theta):
+for a scalar baseline b independent of u.  Proposition 3.3 gives the
+rank-one form with the averaged baseline b = F_mu(theta):
 
     grad^2 F_mu(theta) = E_u[ (f(theta+mu u) - b) / mu^2  *  u u^T ],   b = E_u[f(theta+mu u)].
 
-The finite-sample estimator averages K random directions.  Theorem 4.7 gives the
-variance-optimal baseline  b* = E_u[ f(theta+mu u) ||u u^T - I_d||_F^2 ] / E_u[ ||u u^T - I_d||_F^2 ]
--> F_mu(theta)  as d -> infty.  Theorem 4.8 bounds the Frobenius MSE
+The finite-sample estimator averages K random directions.  Theorem 4.7
+defines the variance-optimal constant baseline
 
-    E ||Ĥ - grad^2 F||_F^2  <=  K d(d+2) V / ((K-1)^2 mu^4)  +  L2^2 mu^2 d
+    b* = E_u[f(theta+mu u)||u u^T-I_d||_F^2] /
+         E_u[||u u^T-I_d||_F^2].
 
-with  V = sigma_xi^2 + 4 L0^2 mu^2 (d+2)  (variance term decreasing in K,mu; bias L2^2 mu^2 d
-increasing in mu).
+The verifier uses deterministic analytic toy objectives and finite Monte Carlo
+samples.  It does not implement the paper's query-reuse history buffer,
+inverse-Hessian estimators, optimizer, data experiments, or stochastic-noise
+assumptions.
 """
 from __future__ import annotations
 import numpy as np
@@ -27,7 +30,7 @@ import numpy as np
 #  Estimators (Prop 3.2 and Prop 3.3)
 # --------------------------------------------------------------------------- #
 def zovh_estimator_prop32(f, theta, mu, K, baseline, rng):
-    """Ĥ = (1/K) sum_i [(f(theta+mu u_i) - b)/mu^2] (u_i u_i^T - I_d).  Unbiased for any b."""
+    """Finite-sample estimator for Proposition 3.2."""
     d = len(theta)
     U = rng.standard_normal(size=(K, d))
     H = np.zeros((d, d))
@@ -38,7 +41,7 @@ def zovh_estimator_prop32(f, theta, mu, K, baseline, rng):
 
 
 def zovh_estimator_rank1(f, theta, mu, K, baseline, rng):
-    """Rank-one form (Prop 3.3): Ĥ = (1/K) sum [(f-b)/mu^2] u_i u_i^T.  Unbiased iff b=F_mu."""
+    """Finite-sample rank-one estimator for Proposition 3.3."""
     d = len(theta)
     U = rng.standard_normal(size=(K, d))
     H = np.zeros((d, d))
@@ -55,7 +58,7 @@ def smoothed_value(f, theta, mu, rng, N=4000):
 
 
 def optimal_baseline(f, theta, mu, rng, N=4000):
-    """Theorem 4.7: b* = E_u[ f(theta+mu u) ||u u^T - I_d||_F^2 ] / E_u[ ||u u^T - I_d||_F^2 ]."""
+    """Monte Carlo estimate of the constant variance-optimal baseline in Theorem 4.7."""
     d = len(theta)
     U = rng.standard_normal(size=(N, d))
     num = 0.0; den = 0.0

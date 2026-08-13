@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "title": "icml26-repro-nEQYu4ndGA-zovh-zeroth-order-hessian",
+  "title": "icml26-zovh-zeroth-order-hessian",
   "emoji": "🎯",
   "space_id": null,
   "paper": null,
@@ -8,7 +8,7 @@
   "updated_at": "2026-07-22T15:20:11+00:00",
   "root": {
     "slug": "index",
-    "title": "icml26-repro-nEQYu4ndGA-zovh-zeroth-order-hessian",
+    "title": "icml26-zovh-zeroth-order-hessian",
     "file": "pages/index.md",
     "children": [
       {

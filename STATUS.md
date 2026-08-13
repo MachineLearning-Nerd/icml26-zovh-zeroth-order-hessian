@@ -1,27 +1,31 @@
-# nEQYu4ndGA — ZoVH Zeroth-Order Hessian (arXiv 2605.30960)
+# ZoVH Zeroth-Order Hessian — audit status
 
-"Revisiting Zeroth-Order Hessian Approximation: A Single-Step Policy Optimization Lens."
+Paper: [Revisiting Zeroth-Order Hessian Approximation: A Single-Step Policy Optimization Lens](https://arxiv.org/abs/2605.30960)
+Authors: Junbin Qiu, Zhaowei Hong, Renzhe Xu, Yao Shu
+OpenReview: [nEQYu4ndGA](https://openreview.net/forum?id=nEQYu4ndGA)
 
-## Result: 3/6 claims VERIFIED = 6 pts  (FULL_GATE_READY)  — UNDER TARGET (honest)
+## Verdict
 
-| Claim | Status | Evidence |
+**INCONCLUSIVE — 0/6 paper-level claims independently verified.**
+
+The repository contains four bounded, deterministic toy diagnostics. Three pass and one is negative. C5 and C6 are not run.
+
+| Claim | Status | What the repository actually checks |
 |---|---|---|
-| **C1** Prop 3.2/3.3 (estimator forms) | ✅ VERIFIED | (u uᵀ−I) form (any baseline) and rank-one form (b=F_μ) coincide exactly (‖diff‖=0); both → ∇²F_μ. |
-| **C2** Theorem 4.6 (unbiased) | ✅ VERIFIED | E[Ĥ]=∇²F_μ, **baseline-independent** (Ĥ(b1)−Ĥ(b2)→0 at 1/√N, tracking ‖mean(u uᵀ−I)‖); converges to analytic smoothed Hessian (quadratic A; quartic diag(12θ²+12μ²)). |
-| **C3** Theorem 4.7/4.8 (variance/bias) | ✅ VERIFIED | b*→F_μ as d grows; variance ↓~1/K; squared smoothing bias ‖∇²F_μ−∇²f‖²~12μ²√d, bounded by L₂²μ²d. |
-| **C4** Fig 2 (vs central-diff) | ❌ HONEST NEGATIVE | Bare estimator's 1/μ⁴ variance dominates central-difference truncation error; paper's 8× needs its full control-variate/query-reuse machinery. |
-| **C5** MNIST attack | ⏸ DEFERRED | Real data. |
-| **C6** Sec 6.2 (22× speedup) | ❌ HONEST NEGATIVE | ZO gradient/Hessian noise floor; bare ZoVH-preconditioned step doesn't out-converge vanilla ZO-GD; 22× needs full variance-reduced implementation. |
+| C1 — Propositions 3.2/3.3 | ALGEBRAIC_FINITE_PROXY | Shared finite directions compare the identity-corrected and rank-one forms on a quadratic. |
+| C2 — Theorem 4.6 | FINITE_ANALYTIC_PROXY | Finite baseline-difference scaling and convergence to analytic quadratic/quartic smoothed Hessians. |
+| C3 — Theorems 4.7/4.8 | FINITE_BIAS_VARIANCE_PROXY | Finite baseline concentration, MSE decrease with K, and quartic smoothing-bias trend. |
+| C4 — Figure 2 | HONEST_NEGATIVE | The bare single-batch estimator loses to central differences in one fixed Styblinski-Tang diagnostic. |
+| C5 — MNIST attack | NOT_REPRODUCED | No MNIST data, attack, or comparison is present. |
+| C6 — synthetic optimization speedup | NOT_REPRODUCED | No full optimizer, query reuse, inverse-Hessian/product estimator, or speedup run is present. |
 
-## Method
-The Gaussian-smoothed Hessian estimator (Prop 3.2): Ĥ=(1/K)Σ[(f(θ+μu_i)−b)/μ²]·(u_i u_iᵀ−I_d), unbiased for ∇²F_μ for ANY baseline b (since E[u uᵀ−I]=0). All exact verification via analytic smoothed Hessians + Monte-Carlo. Pure numpy.
+The passing diagnostics are proxies, not theorem proofs. In particular, this repository does not implement the official query-reuse history buffer or the complete ZoVH system described in the paper.
 
-## Honest summary
-This paper came in at **6 pts (below the ≥10 target)**: C4/C6 are empirical speedups that do NOT reproduce with the bare Prop 3.2 estimator — the paper's accuracy/speedup gains rely on its full variance-reduction machinery (control variates, query-reuse protocol), not captured by the closed-form estimator. The 3 verified claims (C1/C2/C3) are rigorous and machine-precision-derivable. Per the challenge honesty bar, C4/C6 are reported as honest negatives rather than force-fit.
+## Reproduce the audit
 
-## Files
-- `repro/src/core.py` — ZoVH estimators (Prop 3.2/3.3), smoothed value/Hessian, optimal baseline, central-difference.
-- `repro/src/verify.py` — C1–C6 verification → `outputs/verdict.json`.
-- `outputs/gate.json` — gate proof (6 pts).
+~~~bash
+python3 repro/src/verify.py
+python3 repro/src/finalize_gate.py
+~~~
 
-**FULL_GATE_READY: nEQYu4ndGA**
+Raw measurements are in [outputs/diagnostics.json](outputs/diagnostics.json); the publication interpretation is in [outputs/gate.json](outputs/gate.json) and [publication_gate.json](publication_gate.json).

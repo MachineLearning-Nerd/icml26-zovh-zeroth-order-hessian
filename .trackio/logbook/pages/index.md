@@ -1,4 +1,4 @@
-# icml26-repro-nEQYu4ndGA-zovh-zeroth-order-hessian
+# icml26-zovh-zeroth-order-hessian
 
 ## Pages
 
