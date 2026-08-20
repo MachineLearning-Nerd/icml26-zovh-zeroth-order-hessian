@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+title: "Independent bounded audit of Revisiting Zeroth-Order Hessian Approximation"
+message: "If you use this audit, please cite the paper and this repository."
+type: software
+authors:
+  - family-names: Qiu
+    given-names: Junbin
+  - family-names: Hong
+    given-names: Zhaowei
+  - family-names: Xu
+    given-names: Renzhe
+  - family-names: Shu
+    given-names: Yao
+repository-code: "https://github.com/MachineLearning-Nerd/icml26-zovh-zeroth-order-hessian"
+url: "https://github.com/MachineLearning-Nerd/icml26-zovh-zeroth-order-hessian"
+version: "1.0.0"
+date-released: 2026-08-20
+license: "MIT"
+identifiers:
+  - type: arxiv
+    value: "2605.30960"
+    description: "Paper audited by this repository"

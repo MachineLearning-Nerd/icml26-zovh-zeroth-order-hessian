@@ -9,13 +9,20 @@
   "arxiv": "2605.30960",
   "openreview": "nEQYu4ndGA",
   "scope": "bounded_clean_room_single_batch_analytic_toy_proxy",
-  "overall_status": "INCONCLUSIVE",
+  "overall_status": "INCONCLUSIVE_C1_ALGEBRAIC_FINITE_PROXY_C2_FINITE_ANALYTIC_PROXY_C3_FINITE_BIAS_VARIANCE_PROXY_C4_HONEST_NEGATIVE_C5_C6_NOT_REPRODUCED_NO_PAPER_CLAIMS_VERIFIED_NO_CURRENT_SCORE",
+  "paper_reproduction": "inconclusive",
+  "claims_total": 6,
   "paper_claims_verified": 0,
   "paper_claims_total": 6,
   "claims_not_reproduced": 2,
+  "paper_claims_not_verified": 6,
   "finite_proxy_diagnostics_passed": 3,
   "finite_proxy_diagnostics_total": 4,
   "negative_diagnostics": 1,
+  "evidence_points": 8,
+  "evidence_points_total": 12,
+  "current_score_claim": false,
+  "publication_allowed": false,
   "claims": [
     {
       "id": "C1",
@@ -23,7 +30,8 @@
       "status": "ALGEBRAIC_FINITE_PROXY",
       "raw_diagnostic": "C1_estimator_forms_proxy",
       "evidence": "Shared finite Gaussian directions on a deterministic quadratic compare the identity-corrected and rank-one forms.",
-      "limitation": "A finite sample check of the two formulas; it is not a proof of the propositions for arbitrary stochastic objectives."
+      "limitation": "A finite sample check of the two formulas; it is not a proof of the propositions for arbitrary stochastic objectives.",
+      "paper_claim_reproduced": false
     },
     {
       "id": "C2",
@@ -31,7 +39,8 @@
       "status": "FINITE_ANALYTIC_PROXY",
       "raw_diagnostic": "C2_unbiasedness_proxy",
       "evidence": "Finite baseline-difference scaling and convergence to analytic quadratic/quartic smoothed Hessians.",
-      "limitation": "Finite Monte Carlo behavior on two noiseless toy objectives; it does not establish the theorem under the paper's stochastic assumptions."
+      "limitation": "Finite Monte Carlo behavior on two noiseless toy objectives; it does not establish the theorem under the paper's stochastic assumptions.",
+      "paper_claim_reproduced": false
     },
     {
       "id": "C3",
@@ -39,7 +48,8 @@
       "status": "FINITE_BIAS_VARIANCE_PROXY",
       "raw_diagnostic": "C3_bias_variance_proxy",
       "evidence": "Finite dimension trend for the optimal baseline, MSE decrease with K, and quartic smoothing-bias trend.",
-      "limitation": "A finite toy trend check with a loose local bound; it does not verify the theorem's constants, assumptions, query reuse, or stochastic-noise model."
+      "limitation": "A finite toy trend check with a loose local bound; it does not verify the theorem's constants, assumptions, query reuse, or stochastic-noise model.",
+      "paper_claim_reproduced": false
     },
     {
       "id": "C4",
@@ -47,7 +57,8 @@
       "status": "HONEST_NEGATIVE",
       "raw_diagnostic": "C4_central_difference_proxy",
       "evidence": "At one fixed synthetic setting, the bare single-batch estimator has larger error than central differences.",
-      "limitation": "This is not the paper's Figure 2 protocol or an equal-budget reproduction: query reuse, control variates, competing estimators, and all reported settings are absent."
+      "limitation": "This is not the paper's Figure 2 protocol or an equal-budget reproduction: query reuse, control variates, competing estimators, and all reported settings are absent.",
+      "paper_claim_reproduced": false
     },
     {
       "id": "C5",
@@ -55,7 +66,8 @@
       "status": "NOT_REPRODUCED",
       "raw_diagnostic": null,
       "evidence": "No MNIST data, attack implementation, or reported runs are present.",
-      "limitation": "The paper's query-reuse attack protocol and its comparison against Vanilla ZOO were not run."
+      "limitation": "The paper's query-reuse attack protocol and its comparison against Vanilla ZOO were not run.",
+      "paper_claim_reproduced": false
     },
     {
       "id": "C6",
@@ -63,7 +75,8 @@
       "status": "NOT_REPRODUCED",
       "raw_diagnostic": null,
       "evidence": "No optimizer, convergence curves, or speedup runs are present.",
-      "limitation": "The paper's full ZoVH optimizer, inverse-Hessian/product estimators, query reuse, and 22x comparison were not run."
+      "limitation": "The paper's full ZoVH optimizer, inverse-Hessian/product estimators, query reuse, and 22x comparison were not run.",
+      "paper_claim_reproduced": false
     }
   ],
   "claim_status": {
@@ -74,9 +87,14 @@
     "C5": "NOT_REPRODUCED",
     "C6": "NOT_REPRODUCED"
   },
-  "attribution": "MachineLearning-Nerd",
+  "attribution": "MachineLearning-Nerd <MachineLearning-Nerd@users.noreply.github.com>",
   "tests_passed": true,
+  "documentation_gate_passed": true,
   "publication_gate_passed": true,
+  "paper_reproduction_gate_passed": false,
+  "paper_algorithm_implemented": false,
+  "paper_claims_reproduced": false,
   "gate_meaning": "Ready for the documented bounded proxy scope; this gate is not evidence that the six paper claims were reproduced.",
-  "verification_command": "python3 repro/src/verify.py && python3 repro/src/finalize_gate.py"
+  "claims_verified": 0,
+  "verification_command": "python3 repro/src/finalize_gate.py"
 }

@@ -1,102 +1,152 @@
 # ICML 2026 — ZoVH Zeroth-Order Hessian
 
-Independent evidence audit for **“Revisiting Zeroth-Order Hessian Approximation: A Single-Step Policy Optimization Lens”** by Junbin Qiu, Zhaowei Hong, Renzhe Xu, and Yao Shu.
+Paper-level result: INCONCLUSIVE.
 
-> **Status: INCONCLUSIVE.** Three of four bounded finite toy diagnostics pass. **0/6 paper-level claims are independently verified.** One finite diagnostic is negative; the MNIST attack and synthetic optimization claims were not run.
+This repository is an independent, bounded clean-room evidence audit of
+Revisiting Zeroth-Order Hessian Approximation: A Single-Step Policy
+Optimization Lens. It contains small finite diagnostics for selected estimator
+identities and toy analytic behavior. It is not a port of the official ZoVH
+implementation and does not reproduce the complete optimizer or experiments.
+
+Three of four finite diagnostics pass, one finite diagnostic is an honest
+negative, and zero of six complete paper claims are independently verified.
+The package may be published as a bounded audit; it must not be presented as
+a full reproduction, and it makes no current external score claim.
 
 ## Paper
 
-- arXiv: [2605.30960](https://arxiv.org/abs/2605.30960) (v1, submitted 2026-05-29)
-- OpenReview: [nEQYu4ndGA](https://openreview.net/forum?id=nEQYu4ndGA)
-- Paper HTML snapshot: [docs/paper.html](docs/paper.html)
-- Official author code: [Qjbtiger/ZoVH](https://github.com/Qjbtiger/ZoVH)
+- Title: Revisiting Zeroth-Order Hessian Approximation: A Single-Step Policy Optimization Lens
+- Authors: Junbin Qiu, Zhaowei Hong, Renzhe Xu, and Yao Shu
+- arXiv: 2605.30960, version 1, submitted 2026-05-29
+- Paper HTML: docs/paper.html
+- OpenReview: nEQYu4ndGA
+- Official author code: https://github.com/Qjbtiger/ZoVH
+- Cached source: docs/paper.html and docs/paper.txt
 
-The paper reframes Gaussian zeroth-order Hessian estimation as the Hessian of a smoothed single-step policy-optimization objective. It then proposes ZoVH, a variance-reduced suite built around an averaged variance-optimal baseline and a history buffer that reuses past function queries. The full paper also develops regularized inverse-Hessian and inverse-Hessian-gradient-product estimators, a curvature-aware ZOO optimizer, convergence results, and experiments on synthetic objectives, a CNN/MNIST setting, a black-box MNIST attack, and LLM fine-tuning.
+The paper reframes Gaussian zeroth-order Hessian estimation as the Hessian of
+a smoothed single-step policy-optimization objective. It proposes variance
+reduction with an averaged baseline and query-reuse history buffer, and also
+studies inverse-Hessian estimators, a curvature-aware optimizer, convergence,
+MNIST attacks, synthetic speedups, and LLM fine-tuning.
 
-This repository is a small clean-room diagnostic of selected estimator identities. It is not a port of the official implementation.
+## Claim ledger
 
-## Evidence summary
+| ID | Paper target | Local evidence | Status |
+| --- | --- | --- | --- |
+| C1 | Propositions 3.2 and 3.3 estimator forms | Shared finite Gaussian directions on a quadratic | ALGEBRAIC_FINITE_PROXY |
+| C2 | Theorem 4.6 smoothed-Hessian unbiasedness | Finite baseline scaling and analytic quadratic/quartic convergence | FINITE_ANALYTIC_PROXY |
+| C3 | Theorems 4.7 and 4.8 baseline and bias-variance behavior | Finite dimension, MSE, and smoothing-bias trends | FINITE_BIAS_VARIANCE_PROXY |
+| C4 | Figure 2 accuracy comparison | Bare estimator worse than central differences at one fixed setting | HONEST_NEGATIVE |
+| C5 | Section 6.3 MNIST black-box attack | Data and attack pipeline absent | NOT_REPRODUCED |
+| C6 | Section 6.2 synthetic curvature-aware ZOO speedup | Optimizer and speedup runs absent | NOT_REPRODUCED |
 
-| ID | Paper claim or experiment | Evidence produced here | Status |
-|---|---|---|---|
-| C1 | Propositions 3.2 and 3.3: identity-corrected and rank-one Gaussian forms | Shared finite directions on a deterministic quadratic; compare both matrices and their analytic Hessian | ALGEBRAIC_FINITE_PROXY |
-| C2 | Theorem 4.6: unbiasedness of the smoothed Hessian estimator | Finite baseline-difference scaling plus quadratic/quartic analytic smoothed-Hessian convergence | FINITE_ANALYTIC_PROXY |
-| C3 | Theorems 4.7 and 4.8: optimal baseline and bias-variance behavior | Finite dimension trend for b*, MSE across K, and quartic smoothing-bias trend | FINITE_BIAS_VARIANCE_PROXY |
-| C4 | Figure 2 accuracy comparison | Bare Proposition 3.2 estimator versus central differences on Styblinski-Tang at one fixed setting | HONEST_NEGATIVE |
-| C5 | Section 6.3 MNIST black-box adversarial attack | No data, attack implementation, or reported runs | NOT_REPRODUCED |
-| C6 | Section 6.2 synthetic curvature-aware ZOO speedup | No optimizer, convergence curves, or speedup runs | NOT_REPRODUCED |
+The statuses describe local evidence, not successful reproduction of the
+paper claims. The machine-readable contract is in claims.json, and detailed
+production paths are in CLAIM_EVIDENCE.md.
 
-The finite diagnostics are intentionally narrower than the paper. A passing proxy means only that the recorded finite computation behaved as expected under its stated toy setup; it does not convert a theorem or empirical result into a reproduced claim.
+## How each claim is produced
 
-## How each result is produced
-
-Run:
+The existing raw diagnostic output is preserved. The publication ledger can be
+formatted without running the scientific implementation:
 
 ~~~bash
-python3 repro/src/verify.py
 python3 repro/src/finalize_gate.py
+python3 verify_final.py
 ~~~
 
-The first command writes raw measurements to [outputs/diagnostics.json](outputs/diagnostics.json) and [outputs/verdict.json](outputs/verdict.json). The second command writes the six-claim publication report to [outputs/gate.json](outputs/gate.json) and [publication_gate.json](publication_gate.json).
+1. C1 samples shared finite Gaussian directions on a deterministic
+   positive-semidefinite quadratic and compares identity-corrected and
+   rank-one forms against the analytic Hessian. Their form difference is
+   8.746309929968238e-16.
+2. C2 checks baseline-difference scaling and analytic quadratic/quartic
+   smoothed-Hessian convergence as sample sizes increase. The final recorded
+   quadratic and quartic relative errors are 0.0194 and 0.0225.
+3. C3 measures finite optimal-baseline concentration, MSE for K in 20, 50,
+   100, and 200, and quartic smoothing bias for four smoothing values. MSE
+   decreases from 603.182 to 53.729 as K grows.
+4. C4 compares the bare single-batch estimator with central differences on
+   Styblinski-Tang at K=200 and mu=0.1. The errors are 75.504 and 0.0016, so
+   the bounded comparison is negative.
+5. C5 has no MNIST data, attack implementation, or reported runs.
+6. C6 has no complete ZoVH optimizer, inverse-Hessian/product estimator,
+   query-reuse history buffer, convergence evaluation, or speedup comparison.
 
-### C1 — estimator forms
+## Current evidence boundary
 
-verify.py creates a positive-semidefinite quadratic, samples one shared Gaussian direction matrix, estimates F_mu, and evaluates both the identity-corrected form (f(theta + mu u) - b)(u u^T - I)/mu² and the rank-one form (f(theta + mu u) - F_mu)u u^T/mu².
+- Finite proxy diagnostics passed: 3/4.
+- Negative finite diagnostics: 1.
+- Scoped evidence points: 8/12.
+- Complete paper claims independently verified: 0/6.
+- Current external score claim: false.
+- Author endorsement: not claimed.
 
-It records each error against the known quadratic Hessian and the norm of the difference between the two finite matrices. This is an algebraic finite proxy, not a general proof.
+Passing finite proxies mean only that the recorded toy computations behave as
+described. They do not establish the paper's general propositions, stochastic
+assumptions, query-reuse method, optimizer, or empirical results.
 
-### C2 — unbiasedness proxy
+## What is not reproduced
 
-The verifier evaluates the identity-corrected estimator with baseline 0 and with a Monte Carlo estimate of F_mu on increasing shared sample sizes. It then estimates the smoothed Hessian on a quadratic and a quartic and compares against their analytic expectations. The result is labeled a finite analytic proxy because no stochastic function noise or theorem-level assumptions are exercised.
-
-### C3 — bias-variance proxy
-
-The verifier:
-
-1. estimates the paper’s constant variance-optimal baseline b* and compares it with F_mu for dimensions 3, 6, 12, and 24;
-2. measures estimator MSE for K in 20, 50, 100, and 200 on a quadratic;
-3. measures quartic smoothing bias for mu in 0.05, 0.1, 0.2, and 0.4 against a loose toy bound.
-
-These are finite trends only. They do not validate the paper’s constants, assumptions, query reuse, or stochastic-noise model.
-
-### C4 — negative accuracy diagnostic
-
-The bare single-batch Proposition 3.2 estimator is evaluated on Styblinski-Tang with K=200 and mu=0.1, then compared with a central-difference reference under the fixed settings in the script. The observed bare-estimator error is larger. This is an honest negative for this limited diagnostic, not a claim that the paper’s complete Figure 2 protocol was reproduced: query reuse, control variates, competing estimators, and all reported settings are absent.
-
-### C5 and C6 — not run
-
-There is no MNIST data pipeline or black-box attack for C5. There is no implementation of the paper’s full ZoVH optimizer, inverse-Hessian/product estimators, query-reuse history buffer, convergence evaluation, or speedup comparison for C6. Therefore both remain NOT_REPRODUCED, rather than being inferred from the toy diagnostics.
+- The official variance-reduced ZoVH implementation and history buffer.
+- Inverse-Hessian and inverse-Hessian-gradient-product estimators.
+- The curvature-aware ZOO optimizer and convergence curves.
+- The complete Figure 2 protocol and equal-budget comparisons.
+- The MNIST black-box attack.
+- Synthetic speedup experiments and LLM fine-tuning.
+- Formal proofs and paper-wide stochastic-noise assumptions.
 
 ## Repository map
 
-- [repro/src/core.py](repro/src/core.py) — finite implementations of the two Hessian forms, smoothed references, optimal-baseline diagnostic, and central differences.
-- [repro/src/verify.py](repro/src/verify.py) — bounded C1–C4 diagnostics and raw JSON output.
-- [repro/src/finalize_gate.py](repro/src/finalize_gate.py) — converts raw diagnostics into the six-claim publication gate.
-- [outputs/](outputs) — generated measurements and gate reports.
-- [docs/paper.html](docs/paper.html), [docs/paper.txt](docs/paper.txt) — pinned paper snapshots used during the audit.
-- [.trackio/logbook/](.trackio/logbook) — a readable experiment log mirroring the same scope and verdict.
-- [STATUS.md](STATUS.md), [GATE_READY.md](GATE_READY.md), [BRANCH_AUDIT.md](BRANCH_AUDIT.md) — status, gate interpretation, and branch history.
+- repro/src/core.py — finite Hessian forms, smoothed references, baseline
+  diagnostics, and central differences.
+- repro/src/verify.py — existing bounded C1–C4 diagnostics.
+- repro/src/finalize_gate.py — canonical six-claim ledger and gate.
+- outputs/diagnostics.json — existing raw measurements.
+- outputs/verdict.json — canonical claim/evidence/status report.
+- outputs/gate.json — scoped machine-readable gate.
+- publication_gate.json — root-level publication metadata.
+- CLAIM_EVIDENCE.md — claim-to-code-to-output production ledger.
+- SOURCE_AUDIT.md — paper provenance and missing evidence.
+- ENVIRONMENT.md — runtime assumptions and commands.
+- REPORT.md — publication boundary and upgrade requirements.
+- verify_final.py — fail-closed repository-state verifier.
+- docs/paper.html and docs/paper.txt — cached paper reference material.
 
-## Branches and attribution
+## Branches
 
-The cleaned publication branch is main. The original snapshot was on master; it contained one initial commit and no orx or orx-* branch. The old branch was removed after main became the default branch. See [BRANCH_AUDIT.md](BRANCH_AUDIT.md) for the exact migration record.
-
-Approved cleanup commits are attributed to **MachineLearning-Nerd**. No author, paper, or official-code contribution is implied by that attribution.
+The source repository exposed master and is normalized to one canonical main
+branch. There are no experiment, orx/*, or paper-version branches in scope.
+Branch cleanup is administrative and does not increase scientific evidence.
 
 ## Citation
 
 ~~~bibtex
 @inproceedings{qiu2026zovh,
-  title     = {Revisiting Zeroth-Order Hessian Approximation: A Single-Step Policy Optimization Lens},
-  author    = {Qiu, Junbin and Hong, Zhaowei and Xu, Renzhe and Shu, Yao},
-  booktitle = {Proceedings of the 43rd International Conference on Machine Learning},
-  year      = {2026},
-  eprint    = {2605.30960},
-  archivePrefix = {arXiv},
-  url       = {https://arxiv.org/abs/2605.30960}
+  title={Revisiting Zeroth-Order Hessian Approximation: A Single-Step Policy Optimization Lens},
+  author={Qiu, Junbin and Hong, Zhaowei and Xu, Renzhe and Shu, Yao},
+  booktitle={Proceedings of the 43rd International Conference on Machine Learning},
+  year={2026},
+  eprint={2605.30960},
+  archivePrefix={arXiv},
+  url={https://arxiv.org/abs/2605.30960}
 }
 ~~~
 
+Please cite the paper for its research claims and this repository for the
+independent bounded audit artifacts.
+
 ## Thank you
 
-Thank you to Junbin Qiu, Zhaowei Hong, Renzhe Xu, and Yao Shu for making the paper, derivations, empirical protocol, and official code available. This audit is intended as a transparent, limited reproduction record that makes clear what was checked, what was not checked, and where the clean-room implementation differs from the full ZoVH system.
+Thank you to Junbin Qiu, Zhaowei Hong, Renzhe Xu, and Yao Shu for making the
+paper, derivations, empirical protocol, and official code available. This
+audit is intended as a transparent, limited reproduction record that makes
+clear what was checked, what was not checked, and where the clean-room
+implementation differs from the full ZoVH system.
+
+This note is an expression of appreciation only; the authors did not review,
+endorse, or maintain this independent repository.
+
+## Attribution
+
+Repository documentation and commits are attributed to
+MachineLearning-Nerd using
+MachineLearning-Nerd@users.noreply.github.com.

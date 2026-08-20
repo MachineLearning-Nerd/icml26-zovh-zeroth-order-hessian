@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "paper": {
+    "title": "Revisiting Zeroth-Order Hessian Approximation: A Single-Step Policy Optimization Lens",
+    "arxiv": "2605.30960",
+    "submission": "nEQYu4ndGA",
+    "version": "v1 (2026-05-29)",
+    "authors": [
+      "Junbin Qiu",
+      "Zhaowei Hong",
+      "Renzhe Xu",
+      "Yao Shu"
+    ]
+  },
+  "overall_status": "INCONCLUSIVE_C1_ALGEBRAIC_FINITE_PROXY_C2_FINITE_ANALYTIC_PROXY_C3_FINITE_BIAS_VARIANCE_PROXY_C4_HONEST_NEGATIVE_C5_C6_NOT_REPRODUCED_NO_PAPER_CLAIMS_VERIFIED_NO_CURRENT_SCORE",
+  "claims": [
+    {
+      "id": "C1",
+      "name": "estimator_forms",
+      "status": "ALGEBRAIC_FINITE_PROXY",
+      "paper_anchor": "Propositions 3.2 and 3.3",
+      "production": [
+        "repro/src/core.py",
+        "repro/src/verify.py:C1_estimator_forms_proxy",
+        "outputs/diagnostics.json:C1_estimator_forms_proxy",
+        "outputs/verdict.json:C1"
+      ],
+      "scope": "Shared finite Gaussian directions on a deterministic quadratic.",
+      "metrics": {
+        "prop32_to_quadratic_hessian_error": 0.037952753942454544,
+        "rank_one_to_quadratic_hessian_error": 0.037952753942454724,
+        "form_difference": 8.746309929968238e-16,
+        "evidence_points": 2,
+        "paper_claim_reproduced": false
+      },
+      "limitation": "The finite sample check is not a proof for arbitrary stochastic objectives."
+    },
+    {
+      "id": "C2",
+      "name": "smoothed_hessian_unbiasedness",
+      "status": "FINITE_ANALYTIC_PROXY",
+      "paper_anchor": "Theorem 4.6",
+      "production": [
+        "repro/src/core.py",
+        "repro/src/verify.py:C2_unbiasedness_proxy",
+        "outputs/diagnostics.json:C2_unbiasedness_proxy",
+        "outputs/verdict.json:C2"
+      ],
+      "scope": "Baseline scaling and analytic quadratic/quartic smoothed-Hessian convergence.",
+      "metrics": {
+        "quadratic_final_relative_error": 0.0194,
+        "quartic_final_relative_error": 0.0225,
+        "evidence_points": 2,
+        "paper_claim_reproduced": false
+      },
+      "limitation": "Finite Monte Carlo behavior on two noiseless toy objectives does not establish the theorem under stochastic assumptions."
+    },
+    {
+      "id": "C3",
+      "name": "baseline_bias_variance",
+      "status": "FINITE_BIAS_VARIANCE_PROXY",
+      "paper_anchor": "Theorems 4.7 and 4.8",
+      "production": [
+        "repro/src/core.py",
+        "repro/src/verify.py:C3_bias_variance_proxy",
+        "outputs/diagnostics.json:C3_bias_variance_proxy",
+        "outputs/verdict.json:C3"
+      ],
+      "scope": "Finite baseline concentration, K-dependent MSE, and quartic smoothing-bias trends.",
+      "metrics": {
+        "mse_K20": 603.182,
+        "mse_K200": 53.729,
+        "evidence_points": 2,
+        "paper_claim_reproduced": false
+      },
+      "limitation": "Finite toy trends do not verify constants, assumptions, query reuse, or the stochastic-noise model."
+    },
+    {
+      "id": "C4",
+      "name": "accuracy_comparison",
+      "status": "HONEST_NEGATIVE",
+      "paper_anchor": "Figure 2",
+      "production": [
+        "repro/src/core.py",
+        "repro/src/verify.py:C4_central_difference_proxy",
+        "outputs/diagnostics.json:C4_central_difference_proxy",
+        "outputs/verdict.json:C4"
+      ],
+      "scope": "Bare single-batch estimator versus central differences on Styblinski-Tang at K=200 and mu=0.1.",
+      "metrics": {
+        "bare_zovh_error_K200": 75.504,
+        "central_difference_error": 0.0016,
+        "evidence_points": 2,
+        "paper_claim_reproduced": false
+      },
+      "limitation": "The complete Figure 2 protocol, query reuse, control variates, competing estimators, and settings are absent."
+    },
+    {
+      "id": "C5",
+      "name": "mnist_black_box_attack",
+      "status": "NOT_REPRODUCED",
+      "paper_anchor": "Section 6.3",
+      "production": [
+        "README.md",
+        "SOURCE_AUDIT.md",
+        "outputs/verdict.json:C5"
+      ],
+      "scope": "MNIST data, attack implementation, and reported runs.",
+      "metrics": {
+        "evidence_points": 0,
+        "paper_claim_reproduced": false
+      },
+      "limitation": "The data and attack pipeline are absent."
+    },
+    {
+      "id": "C6",
+      "name": "synthetic_zoo_speedup",
+      "status": "NOT_REPRODUCED",
+      "paper_anchor": "Section 6.2",
+      "production": [
+        "README.md",
+        "SOURCE_AUDIT.md",
+        "outputs/verdict.json:C6"
+      ],
+      "scope": "Curvature-aware optimizer, convergence curves, and speedup runs.",
+      "metrics": {
+        "evidence_points": 0,
+        "paper_claim_reproduced": false
+      },
+      "limitation": "The complete optimizer and experiment are absent."
+    }
+  ],
+  "audit": {
+    "finite_proxy_diagnostics_passed": 3,
+    "finite_proxy_diagnostics_total": 4,
+    "negative_diagnostics": 1,
+    "claims_not_reproduced": 2,
+    "paper_claims_not_verified": 6,
+    "claims_total": 6,
+    "evidence_points": 8,
+    "evidence_points_total": 12,
+    "paper_claims_verified": 0,
+    "current_score_claim": false,
+    "publication_allowed": false,
+    "attribution": "MachineLearning-Nerd <MachineLearning-Nerd@users.noreply.github.com>"
+  }
+}

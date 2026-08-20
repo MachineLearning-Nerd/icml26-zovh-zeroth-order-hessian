@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "status": "INCONCLUSIVE_C1_ALGEBRAIC_FINITE_PROXY_C2_FINITE_ANALYTIC_PROXY_C3_FINITE_BIAS_VARIANCE_PROXY_C4_HONEST_NEGATIVE_C5_C6_NOT_REPRODUCED_NO_PAPER_CLAIMS_VERIFIED_NO_CURRENT_SCORE",
+  "repository": {
+    "owner": "MachineLearning-Nerd",
+    "name": "icml26-zovh-zeroth-order-hessian",
+    "canonical_branch": "main",
+    "canonical_email": "MachineLearning-Nerd@users.noreply.github.com",
+    "recovery_bundle_sha256": "3817d3b55118ea1cb61f819d7898d4634339e8a328effbe7761c5bfe33b1b978"
+  },
+  "source": {
+    "source_tip_before_standardization": "f39b869df88639cd2028cee2a95444f4b74319c3",
+    "paper": "2605.30960",
+    "paper_version": "v1 (2026-05-29)",
+    "openreview_submission": "nEQYu4ndGA"
+  },
+  "evidence": {
+    "finite_proxy_diagnostics_passed": 3,
+    "finite_proxy_diagnostics_total": 4,
+    "negative_diagnostics": 1,
+    "evidence_points": 8,
+    "evidence_points_total": 12,
+    "paper_claims_verified": 0,
+    "current_score_claim": false,
+    "publication_allowed": false
+  },
+  "attribution": "MachineLearning-Nerd <MachineLearning-Nerd@users.noreply.github.com>"
+}

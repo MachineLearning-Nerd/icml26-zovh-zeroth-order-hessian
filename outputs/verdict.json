@@ -9,116 +9,83 @@
   "arxiv": "2605.30960",
   "openreview": "nEQYu4ndGA",
   "scope": "bounded_clean_room_single_batch_analytic_toy_proxy",
-  "claims": {
-    "C1_estimator_forms_proxy": {
-      "paper_claim": "Propositions 3.2 and 3.3",
-      "diagnostic": "shared finite Gaussian directions on a quadratic",
-      "prop32_to_quadratic_hessian_error": 0.037952753942454544,
-      "rank_one_to_quadratic_hessian_error": 0.037952753942454724,
-      "form_difference": 8.746309929968238e-16,
-      "finite_proxy_passed": true,
-      "status": "ALGEBRAIC_FINITE_PROXY",
-      "limitation": "A finite sample check of the two formulas; it is not a proof of the propositions for arbitrary stochastic objectives."
-    },
-    "C2_unbiasedness_proxy": {
-      "paper_claim": "Theorem 4.6",
-      "diagnostic": "finite baseline-difference scaling plus analytic quadratic and quartic smoothed-Hessian convergence",
-      "baseline_diff_by_sample_size": {
-        "2000": 0.0367,
-        "8000": 0.0203,
-        "32000": 0.0118,
-        "128000": 0.0035
-      },
-      "gram_error_by_sample_size": {
-        "2000": 0.1255,
-        "8000": 0.0694,
-        "32000": 0.0402,
-        "128000": 0.012
-      },
-      "quadratic_relative_error_by_sample_size": {
-        "5000": 0.1619,
-        "20000": 0.0875,
-        "80000": 0.0449,
-        "320000": 0.0194
-      },
-      "quartic_relative_error_by_sample_size": {
-        "5000": 0.1199,
-        "20000": 0.0644,
-        "80000": 0.0549,
-        "320000": 0.0225
-      },
-      "baseline_difference_shrinks": true,
-      "analytic_convergence_improves": true,
-      "finite_proxy_passed": true,
-      "status": "FINITE_ANALYTIC_PROXY",
-      "limitation": "Finite Monte Carlo behavior on two noiseless toy objectives; it does not establish the theorem under the paper's stochastic assumptions."
-    },
-    "C3_bias_variance_proxy": {
-      "paper_claim": "Theorems 4.7 and 4.8",
-      "diagnostic": "finite baseline concentration, K-dependent MSE, and quartic smoothing-bias scaling",
-      "baseline_concentration": [
-        {
-          "dimension": 3,
-          "relative_difference": 0.6077
-        },
-        {
-          "dimension": 6,
-          "relative_difference": 0.5657
-        },
-        {
-          "dimension": 12,
-          "relative_difference": 0.2314
-        },
-        {
-          "dimension": 24,
-          "relative_difference": 0.1019
-        }
-      ],
-      "mse_by_K": {
-        "20": 603.182,
-        "50": 222.598,
-        "100": 112.106,
-        "200": 53.729
-      },
-      "squared_bias_by_mu": {
-        "0.05": 0.007,
-        "0.1": 0.101,
-        "0.2": 1.497,
-        "0.4": 23.022
-      },
-      "loose_toy_bound_by_mu": {
-        "0.05": 3.163,
-        "0.1": 12.651,
-        "0.2": 50.603,
-        "0.4": 202.411
-      },
-      "baseline_concentration_improves": true,
-      "mse_decreases_with_K": true,
-      "smoothing_bias_increases": true,
-      "squared_bias_below_loose_bound": true,
-      "finite_proxy_passed": true,
-      "status": "FINITE_BIAS_VARIANCE_PROXY",
-      "limitation": "A finite toy trend check with a loose local bound; it does not verify the theorem's constants, assumptions, query reuse, or stochastic-noise model."
-    },
-    "C4_central_difference_proxy": {
-      "paper_claim": "Figure 2 accuracy comparison",
-      "diagnostic": "bare Proposition 3.2 estimator versus central differences on Styblinski-Tang at one fixed setting",
-      "bare_zovh_error_K200": 75.504,
-      "central_difference_error": 0.0016,
-      "bare_zovh_beats_central_difference": false,
-      "finite_proxy_passed": false,
-      "status": "HONEST_NEGATIVE",
-      "limitation": "This is not the paper's Figure 2 protocol or an equal-budget reproduction: query reuse, control variates, competing estimators, and all reported settings are absent."
-    }
-  },
+  "overall_status": "INCONCLUSIVE_C1_ALGEBRAIC_FINITE_PROXY_C2_FINITE_ANALYTIC_PROXY_C3_FINITE_BIAS_VARIANCE_PROXY_C4_HONEST_NEGATIVE_C5_C6_NOT_REPRODUCED_NO_PAPER_CLAIMS_VERIFIED_NO_CURRENT_SCORE",
+  "paper_reproduction": "inconclusive",
+  "claims_total": 6,
+  "paper_claims_verified": 0,
+  "paper_claims_total": 6,
+  "claims_not_reproduced": 2,
+  "paper_claims_not_verified": 6,
   "finite_proxy_diagnostics_passed": 3,
   "finite_proxy_diagnostics_total": 4,
   "negative_diagnostics": 1,
-  "paper_claims_verified": 0,
-  "paper_claims_total": 6,
-  "not_run": [
-    "C5: MNIST black-box adversarial attack",
-    "C6: Section 6.2 synthetic optimization speedup"
+  "evidence_points": 8,
+  "evidence_points_total": 12,
+  "current_score_claim": false,
+  "publication_allowed": false,
+  "claims": [
+    {
+      "id": "C1",
+      "paper_claim": "Propositions 3.2 and 3.3: Gaussian smoothed Hessian forms",
+      "status": "ALGEBRAIC_FINITE_PROXY",
+      "raw_diagnostic": "C1_estimator_forms_proxy",
+      "evidence": "Shared finite Gaussian directions on a deterministic quadratic compare the identity-corrected and rank-one forms.",
+      "limitation": "A finite sample check of the two formulas; it is not a proof of the propositions for arbitrary stochastic objectives.",
+      "paper_claim_reproduced": false
+    },
+    {
+      "id": "C2",
+      "paper_claim": "Theorem 4.6: unbiasedness of the smoothed Hessian estimator",
+      "status": "FINITE_ANALYTIC_PROXY",
+      "raw_diagnostic": "C2_unbiasedness_proxy",
+      "evidence": "Finite baseline-difference scaling and convergence to analytic quadratic/quartic smoothed Hessians.",
+      "limitation": "Finite Monte Carlo behavior on two noiseless toy objectives; it does not establish the theorem under the paper's stochastic assumptions.",
+      "paper_claim_reproduced": false
+    },
+    {
+      "id": "C3",
+      "paper_claim": "Theorems 4.7 and 4.8: baseline and bias-variance behavior",
+      "status": "FINITE_BIAS_VARIANCE_PROXY",
+      "raw_diagnostic": "C3_bias_variance_proxy",
+      "evidence": "Finite dimension trend for the optimal baseline, MSE decrease with K, and quartic smoothing-bias trend.",
+      "limitation": "A finite toy trend check with a loose local bound; it does not verify the theorem's constants, assumptions, query reuse, or stochastic-noise model.",
+      "paper_claim_reproduced": false
+    },
+    {
+      "id": "C4",
+      "paper_claim": "Figure 2: ZoVH accuracy comparison",
+      "status": "HONEST_NEGATIVE",
+      "raw_diagnostic": "C4_central_difference_proxy",
+      "evidence": "At one fixed synthetic setting, the bare single-batch estimator has larger error than central differences.",
+      "limitation": "This is not the paper's Figure 2 protocol or an equal-budget reproduction: query reuse, control variates, competing estimators, and all reported settings are absent.",
+      "paper_claim_reproduced": false
+    },
+    {
+      "id": "C5",
+      "paper_claim": "Section 6.3: MNIST black-box adversarial attack",
+      "status": "NOT_REPRODUCED",
+      "raw_diagnostic": null,
+      "evidence": "No MNIST data, attack implementation, or reported runs are present.",
+      "limitation": "The paper's query-reuse attack protocol and its comparison against Vanilla ZOO were not run.",
+      "paper_claim_reproduced": false
+    },
+    {
+      "id": "C6",
+      "paper_claim": "Section 6.2: synthetic curvature-aware ZOO speedup",
+      "status": "NOT_REPRODUCED",
+      "raw_diagnostic": null,
+      "evidence": "No optimizer, convergence curves, or speedup runs are present.",
+      "limitation": "The paper's full ZoVH optimizer, inverse-Hessian/product estimators, query reuse, and 22x comparison were not run.",
+      "paper_claim_reproduced": false
+    }
   ],
-  "overall_status": "INCONCLUSIVE"
+  "claim_status": {
+    "C1": "ALGEBRAIC_FINITE_PROXY",
+    "C2": "FINITE_ANALYTIC_PROXY",
+    "C3": "FINITE_BIAS_VARIANCE_PROXY",
+    "C4": "HONEST_NEGATIVE",
+    "C5": "NOT_REPRODUCED",
+    "C6": "NOT_REPRODUCED"
+  },
+  "attribution": "MachineLearning-Nerd <MachineLearning-Nerd@users.noreply.github.com>"
 }

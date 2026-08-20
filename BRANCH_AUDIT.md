@@ -1,25 +1,29 @@
-# Branch audit
+# Branch and commit audit
 
-## Final published state
+## Normalization
 
-| Branch | Role | State |
-|---|---|---|
-| main | Clean publication branch | Current branch; contains the bounded audit, README, gate, and attribution-normalized history |
-| master | Legacy branch | Deleted after main became the default branch |
+- Source tip before standardization:
+  f39b869df88639cd2028cee2a95444f4b74319c3.
+- The source repository exposed master; the live repository now exposes only
+  main.
+- The source had no experiment or paper-version branches in scope.
+- Recovery bundle SHA-256:
+  3817d3b55118ea1cb61f819d7898d4634339e8a328effbe7761c5bfe33b1b978.
+- The recovery bundle preserves the complete pre-normalization history.
 
-No orx or orx-* branch was present in the inspected repository. The original snapshot had one branch, master, and one initial commit:
+## Current branch policy
 
-~~~text
-d3cbb95aadb31e9ec130c9efe07e2576f49cb324
-nEQYu4ndGA ZoVH: 3/6 claims VERIFIED (6 pts, honest)
-~~~
+- main is the canonical paper metadata, evidence, and verifier branch.
+- New evidence should use a descriptive audit/... branch and record the paper
+  version, command, inputs, outputs, controls, and limitations before merging.
+- The cached paper snapshots are reference material; arXiv 2605.30960v1 is
+  authoritative for version-sensitive claims in this audit.
 
-That legacy commit used a local DineshAI <dinesh@local> identity and included a Claude co-author trailer. The published history was rewritten as an explicit attribution cleanup so reachable commits use the GitHub identity for MachineLearning-Nerd and no longer contain that trailer. The rewrite changes commit IDs but not the repository’s paper snapshot.
+## Attribution policy
 
-The remote branch, default-branch setting, deleted legacy branch, tip commit, and commit author/committer identities were checked after publication. The migration tip at that readback was:
+All reachable commits in the published history use:
 
-~~~text
-1d3e84b34386ce82eae6edd07a01f1674c70d9ba
-~~~
+MachineLearning-Nerd <MachineLearning-Nerd@users.noreply.github.com>
 
-This branch-audit update is a documentation-only descendant of that verified migration tip. The final descendant is checked again after it is pushed; its author and committer use the same MachineLearning-Nerd identity.
+The old master branch name and earlier identity are retained only in the
+recovery bundle and history notes, not as live branch or commit metadata.

@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "paper": "2605.30960",
+  "submission": "nEQYu4ndGA",
+  "overall_status": "INCONCLUSIVE_C1_ALGEBRAIC_FINITE_PROXY_C2_FINITE_ANALYTIC_PROXY_C3_FINITE_BIAS_VARIANCE_PROXY_C4_HONEST_NEGATIVE_C5_C6_NOT_REPRODUCED_NO_PAPER_CLAIMS_VERIFIED_NO_CURRENT_SCORE",
+  "claim_statuses": {
+    "C1": "ALGEBRAIC_FINITE_PROXY",
+    "C2": "FINITE_ANALYTIC_PROXY",
+    "C3": "FINITE_BIAS_VARIANCE_PROXY",
+    "C4": "HONEST_NEGATIVE",
+    "C5": "NOT_REPRODUCED",
+    "C6": "NOT_REPRODUCED"
+  },
+  "evidence": {
+    "finite_proxy_diagnostics_passed": 3,
+    "finite_proxy_diagnostics_total": 4,
+    "negative_diagnostics": 1,
+    "evidence_points": 8,
+    "evidence_points_total": 12,
+    "paper_claims_verified": 0,
+    "paper_claims_not_verified": 6
+  },
+  "publication": {
+    "documentation_gate_passed": true,
+    "paper_reproduction_gate_passed": false,
+    "current_score_claim": false,
+    "publication_allowed": false
+  },
+  "attribution": "MachineLearning-Nerd <MachineLearning-Nerd@users.noreply.github.com>"
+}

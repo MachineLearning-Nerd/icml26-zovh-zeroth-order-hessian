@@ -1,31 +1,23 @@
-# ZoVH Zeroth-Order Hessian — audit status
+# nEQYu4ndGA — ZoVH Zeroth-Order Hessian
 
-Paper: [Revisiting Zeroth-Order Hessian Approximation: A Single-Step Policy Optimization Lens](https://arxiv.org/abs/2605.30960)
-Authors: Junbin Qiu, Zhaowei Hong, Renzhe Xu, Yao Shu
-OpenReview: [nEQYu4ndGA](https://openreview.net/forum?id=nEQYu4ndGA)
+Overall status:
+INCONCLUSIVE_C1_ALGEBRAIC_FINITE_PROXY_C2_FINITE_ANALYTIC_PROXY_C3_FINITE_BIAS_VARIANCE_PROXY_C4_HONEST_NEGATIVE_C5_C6_NOT_REPRODUCED_NO_PAPER_CLAIMS_VERIFIED_NO_CURRENT_SCORE
 
-## Verdict
+| Claim | Status | Evidence |
+| --- | --- | --- |
+| C1 Propositions 3.2 and 3.3 | ALGEBRAIC_FINITE_PROXY | Form difference 8.746309929968238e-16 |
+| C2 Theorem 4.6 | FINITE_ANALYTIC_PROXY | Final quadratic/quartic errors 0.0194 and 0.0225 |
+| C3 Theorems 4.7 and 4.8 | FINITE_BIAS_VARIANCE_PROXY | MSE decreases from 603.182 to 53.729 with K |
+| C4 Figure 2 | HONEST_NEGATIVE | Bare estimator error 75.504 versus central difference 0.0016 |
+| C5 MNIST attack | NOT_REPRODUCED | Data and attack implementation absent |
+| C6 synthetic speedup | NOT_REPRODUCED | Optimizer and speedup runs absent |
 
-**INCONCLUSIVE — 0/6 paper-level claims independently verified.**
+- Finite proxy diagnostics passed: 3/4.
+- Negative finite diagnostics: 1.
+- Scoped evidence points: 8/12.
+- Complete paper claims independently verified: 0/6.
+- Current external score claim: false.
+- Canonical branch: main.
+- Canonical attribution: MachineLearning-Nerd.
 
-The repository contains four bounded, deterministic toy diagnostics. Three pass and one is negative. C5 and C6 are not run.
-
-| Claim | Status | What the repository actually checks |
-|---|---|---|
-| C1 — Propositions 3.2/3.3 | ALGEBRAIC_FINITE_PROXY | Shared finite directions compare the identity-corrected and rank-one forms on a quadratic. |
-| C2 — Theorem 4.6 | FINITE_ANALYTIC_PROXY | Finite baseline-difference scaling and convergence to analytic quadratic/quartic smoothed Hessians. |
-| C3 — Theorems 4.7/4.8 | FINITE_BIAS_VARIANCE_PROXY | Finite baseline concentration, MSE decrease with K, and quartic smoothing-bias trend. |
-| C4 — Figure 2 | HONEST_NEGATIVE | The bare single-batch estimator loses to central differences in one fixed Styblinski-Tang diagnostic. |
-| C5 — MNIST attack | NOT_REPRODUCED | No MNIST data, attack, or comparison is present. |
-| C6 — synthetic optimization speedup | NOT_REPRODUCED | No full optimizer, query reuse, inverse-Hessian/product estimator, or speedup run is present. |
-
-The passing diagnostics are proxies, not theorem proofs. In particular, this repository does not implement the official query-reuse history buffer or the complete ZoVH system described in the paper.
-
-## Reproduce the audit
-
-~~~bash
-python3 repro/src/verify.py
-python3 repro/src/finalize_gate.py
-~~~
-
-Raw measurements are in [outputs/diagnostics.json](outputs/diagnostics.json); the publication interpretation is in [outputs/gate.json](outputs/gate.json) and [publication_gate.json](publication_gate.json).
+See CLAIM_EVIDENCE.md and outputs/verdict.json for the production ledger.

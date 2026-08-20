@@ -103,6 +103,16 @@ def main():
         },
     ]
 
+    for claim in claims:
+        claim["paper_claim_reproduced"] = False
+
+    overall_status = (
+        "INCONCLUSIVE_C1_ALGEBRAIC_FINITE_PROXY_"
+        "C2_FINITE_ANALYTIC_PROXY_C3_FINITE_BIAS_VARIANCE_PROXY_"
+        "C4_HONEST_NEGATIVE_C5_C6_NOT_REPRODUCED_"
+        "NO_PAPER_CLAIMS_VERIFIED_NO_CURRENT_SCORE"
+    )
+
     claim_status = {claim["id"]: claim["status"] for claim in claims}
     report = {
         "paper": diagnostics["paper"],
@@ -110,37 +120,51 @@ def main():
         "arxiv": diagnostics["arxiv"],
         "openreview": diagnostics["openreview"],
         "scope": diagnostics["scope"],
-        "overall_status": "INCONCLUSIVE",
+        "overall_status": overall_status,
+        "paper_reproduction": "inconclusive",
+        "claims_total": 6,
         "paper_claims_verified": 0,
         "paper_claims_total": 6,
         "claims_not_reproduced": 2,
+        "paper_claims_not_verified": 6,
         "finite_proxy_diagnostics_passed": finite_passed,
         "finite_proxy_diagnostics_total": finite_total,
         "negative_diagnostics": 1,
+        "evidence_points": 8,
+        "evidence_points_total": 12,
+        "current_score_claim": False,
+        "publication_allowed": False,
         "claims": claims,
         "claim_status": claim_status,
-        "attribution": "MachineLearning-Nerd",
+        "attribution": "MachineLearning-Nerd <MachineLearning-Nerd@users.noreply.github.com>",
     }
     gate = {
         **report,
         "tests_passed": tests_passed,
+        "documentation_gate_passed": True,
         "publication_gate_passed": tests_passed,
+        "paper_reproduction_gate_passed": False,
+        "paper_algorithm_implemented": False,
+        "paper_claims_reproduced": False,
         "gate_meaning": (
             "Ready for the documented bounded proxy scope; this gate is not "
             "evidence that the six paper claims were reproduced."
         ),
-        "verification_command": (
-            "python3 repro/src/verify.py && "
-            "python3 repro/src/finalize_gate.py"
-        ),
+        "claims_verified": 0,
+        "evidence_points": 8,
+        "evidence_points_total": 12,
+        "current_score_claim": False,
+        "publication_allowed": False,
+        "verification_command": "python3 repro/src/finalize_gate.py",
     }
 
     for path in [
+        os.path.join(OUTPUTS, "verdict.json"),
         os.path.join(OUTPUTS, "gate.json"),
         os.path.join(ROOT, "publication_gate.json"),
     ]:
         with open(path, "w", encoding="utf-8") as handle:
-            json.dump(gate, handle, indent=2)
+            json.dump(report if path.endswith("verdict.json") else gate, handle, indent=2)
             handle.write("\n")
 
     print(f"Publication gate passed: {tests_passed}")
